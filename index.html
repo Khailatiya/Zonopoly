@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monopoli Kimia - Asam Basa</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f0f8ff;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+        }
+        
+        .board {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            grid-template-rows: repeat(7, 1fr);
+            gap: 5px;
+            margin: 20px 0;
+        }
+        
+        .cell {
+            border: 2px solid #3498db;
+            border-radius: 5px;
+            height: 80px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 5px;
+            background-color: white;
+            transition: transform 0.3s ease;
+        }
+        
+        .cell:hover {
+            transform: scale(1.05);
+        }
+        
+        .challenge {
+            background-color: #3498db;
+            color: white;
+        }
+        
+        .penalty {
+            background-color: #e74c3c;
+            color: white;
+        }
+        
+        .start {
+            background-color: #2ecc71;
+            color: white;
+            font-weight: bold;
+        }
+        
+        .center {
+            grid-column: 2 / 7;
+            grid-row: 2 / 7;
+            border: none;
+            background-color: transparent;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .player {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            position: absolute;
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+            gap: 10px;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+        }
+        
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 600px;
+            border-radius: 10px;
+        }
+        
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        
+        .close:hover {
+            color: black;
+        }
+        
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        
+        button:hover {
+            background-color: #2980b9;
+        }
+        
+        .players-container {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        .player-info {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: white;
+            min-width: 120px;
+        }
+        
+        .player-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            margin-bottom: 5px;
+        }
+        
+        .dice-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .dice {
+            font-size: 60px;
+            margin: 10px 0;
+        }
+        
+        .scoreboard {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        
+        .scoreboard th, .scoreboard td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+        }
+        
+        .scoreboard th {
+            background-color: #f2f2f2;
+        }
+        
+        .answer-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            justify-content: center;
+        }
+        
+        .correct-btn {
+            background-color: #2ecc71;
+        }
+        
+        .correct-btn:hover {
+            background-color: #27ae60;
+        }
+        
+        .incorrect-btn {
+            background-color: #e74c3c;
+        }
+        
+        .incorrect-btn:hover {
+            background-color: #c0392b;
+        }
+        
+        .player-token {
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            position: relative;
+            z-index: 2;
+            margin: 2px;
+            border: 2px solid white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Monopoli Kimia - Asam Basa</h1>
+        
+        <div class="players-container" id="players-container">
+            <!-- Player info will be added here dynamically -->
+        </div>
+        
+        <div class="dice-container">
+            <p>Giliran: <span id="current-player-name">-</span></p>
+            <div class="dice" id="dice">🎲</div>
+            <button id="roll-dice">Lempar Dadu</button>
+        </div>
+        
+        <div class="board" id="board">
+            <!-- Board will be generated dynamically -->
+        </div>
+        
+        <div class="controls">
+            <button id="add-player">Tambah Pemain</button>
+            <button id="start-game">Mulai Permainan</button>
+            <button id="reset-game">Reset Permainan</button>
+        </div>
+        
+        <table class="scoreboard">
+            <thead>
+                <tr>
+                    <th>Pemain</th>
+                    <th>Skor</th>
+                </tr>
+            </thead>
+            <tbody id="scoreboard-body">
+                <!-- Scores will be added here dynamically -->
+            </tbody>
+        </table>
+    </div>
+    
+    <!-- Challenge Modal -->
+    <div id="challenge-modal" class="modal">
+        <div class="modal-content">
+            <span class="close" id="close-challenge">&times;</span>
+            <h2>Kartu Challenge</h2>
+            <div id="challenge-content"></div>
+            <div class="answer-buttons">
+                <button class="correct-btn" id="correct-answer">Jawaban Benar (+10 poin)</button>
+                <button class="incorrect-btn" id="incorrect-answer">Jawaban Salah</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Penalty Modal -->
+    <div id="penalty-modal" class="modal">
+        <div class="modal-content">
+            <span class="close" id="close-penalty">&times;</span>
+            <h2>Kartu Penalty</h2>
+            <div id="penalty-content"></div>
+            <div class="answer-buttons">
+                <button class="correct-btn" id="penalty-completed">Selesai (+5 poin)</button>
+                <button class="incorrect-btn" id="penalty-failed">Gagal</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Add Player Modal -->
+    <div id="add-player-modal" class="modal">
+        <div class="modal-content">
+            <span class="close" id="close-add-player">&times;</span>
+            <h2>Tambah Pemain</h2>
+            <div>
+                <p>
+                    <label for="player-name">Nama Pemain:</label>
+                    <input type="text" id="player-name">
+                </p>
+                <button id="confirm-add-player">Tambah</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Game configuration
+        const boardSize = 7;
+        const playerColors = ['#e74c3c', '#3498db', '#2ecc71', '#f1c40f', '#9b59b6', '#e67e22'];
+        const maxPlayers = 6;
+        
+        // Game state
+        let players = [];
+        let currentPlayerIndex = 0;
+        let gameStarted = false;
+        
+        // Challenge and Penalty questions
+        const challengeQuestions = [
+            "Apa definisi asam menurut teori Arrhenius?",
+            "Jelaskan perbedaan antara asam kuat dan asam lemah.",
+            "Berikan contoh 3 asam yang umum digunakan dalam kehidupan sehari-hari.",
+            "Apa yang dimaksud dengan pH?",
+            "Jelaskan bagaimana cara menghitung pH dari larutan asam kuat.",
+            "Apa definisi basa menurut teori Brønsted-Lowry?",
+            "Sebutkan 3 contoh basa yang umum digunakan dalam kehidupan sehari-hari.",
+            "Jelaskan apa itu indikator asam-basa dan berikan 2 contoh.",
+            "Bagaimana kertas lakmus merah dan biru bereaksi terhadap asam dan basa?",
+            "Jika larutan HCl 0,1 M memiliki [H+] = 0,1 M, berapa pH larutan tersebut?",
+            "Apa yang dimaksud dengan larutan buffer?",
+            "Berikan contoh aplikasi larutan buffer dalam bidang medis.",
+            "Jelaskan apa itu titrasi asam-basa.",
+            "Pada pH berapa phenolphthalein berubah warna?",
+            "Apa yang terjadi jika larutan asam direaksikan dengan larutan basa?"
+        ];
+        
+        const penaltyTasks = [
+            "Jawablah 2 soal berikut: 1) Berapa pH larutan NaOH 0,01 M? 2) Apa nama senyawa H2SO4?",
+            "Jelaskan minimal 3 perbedaan antara asam kuat dan asam lemah!",
+            "Buatlah diagram alir tentang cara identifikasi larutan asam atau basa menggunakan indikator!",
+            "Jawablah soal berikut: 1) Berapa pH larutan HCl 0,001 M? 2) Berapa pOH nya? 3) Berapa [H+] dan [OH-] nya?",
+            "Jelaskan secara ringkas teori asam-basa menurut Arrhenius, Brønsted-Lowry, dan Lewis!",
+            "Gambarkan struktur Lewis dari 2 senyawa asam dan jelaskan mengapa senyawa tersebut bersifat asam!",
+            "Pada titrasi asam-basa, jelaskan apa yang terjadi pada titik ekivalen dan bagaimana cara menentukannya!",
+            "Buatlah daftar minimal 5 indikator asam-basa beserta perubahan warnanya!",
+            "Jelaskan apa itu derajat disosiasi dan bagaimana hubungannya dengan kekuatan asam!",
+            "Jelaskan perbedaan antara hidrolisis garam, larutan buffer, dan larutan penyangga!"
+        ];
+        
+        // DOM elements
+        const boardElement = document.getElementById('board');
+        const diceElement = document.getElementById('dice');
+        const rollDiceButton = document.getElementById('roll-dice');
+        const addPlayerButton = document.getElementById('add-player');
+        const startGameButton = document.getElementById('start-game');
+        const resetGameButton = document.getElementById('reset-game');
+        const challengeModal = document.getElementById('challenge-modal');
+        const penaltyModal = document.getElementById('penalty-modal');
+        const addPlayerModal = document.getElementById('add-player-modal');
+        const currentPlayerNameElement = document.getElementById('current-player-name');
+        const playersContainer = document.getElementById('players-container');
+        const scoreboardBody = document.getElementById('scoreboard-body');
+        
+        // Board setup
+        function createBoard() {
+            boardElement.innerHTML = '';
+            const totalCells = boardSize * 4 - 4;
+            
+            // Create the outer cells (perimeter)
+            for (let i = 0; i < boardSize; i++) {
+                for (let j = 0; j < boardSize; j++) {
+                    // Only create cells on the perimeter
+                    if (i === 0 || i === boardSize - 1 || j === 0 || j === boardSize - 1) {
+                        const cell = document.createElement('div');
+                        cell.className = 'cell';
+                        cell.dataset.index = getCellIndex(i, j);
+                        
+                        // Start cell
+                        if (i === boardSize - 1 && j === boardSize - 1) {
+                            cell.classList.add('start');
+                            cell.innerHTML = 'START';
+                        }
+                        // Challenge cells: every 3rd cell
+                        else if ((getCellIndex(i, j) % 3) === 0) {
+                            cell.classList.add('challenge');
+                            cell.innerHTML = 'CHALLENGE';
+                        }
+                        // Penalty cells: every 5th cell
+                        else if ((getCellIndex(i, j) % 5) === 0) {
+                            cell.classList.add('penalty');
+                            cell.innerHTML = 'PENALTY';
+                        }
+                        // Regular cells
+                        else {
+                            cell.innerHTML = `${getCellIndex(i, j)}`;
+                        }
+                        
+                        // Create container for player tokens
+                        const playersDiv = document.createElement('div');
+                        playersDiv.className = 'players-container';
+                        playersDiv.style.display = 'flex';
+                        playersDiv.style.flexWrap = 'wrap';
+                        playersDiv.style.justifyContent = 'center';
+                        cell.appendChild(playersDiv);
+                        
+                        boardElement.appendChild(cell);
+                    } else if (i === Math.floor(boardSize / 2) && j === Math.floor(boardSize / 2)) {
+                        // Center area
+                        const centerCell = document.createElement('div');
+                        centerCell.className = 'cell center';
+                        centerCell.innerHTML = '<h2>MONOPOLI KIMIA</h2><p>Asam & Basa</p>';
+                        boardElement.appendChild(centerCell);
+                    }
+                }
+            }
+        }
+        
+        // Convert row, col to linear cell index along perimeter
+        function getCellIndex(row, col) {
+            const totalCells = boardSize * 4 - 4;
+            
+            if (row === 0) {
+                // Top row: right to left
+                return boardSize - 1 - col;
+            } else if (col === 0) {
+                // Left column: top to bottom
+                return boardSize - 1 + row;
+            } else if (row === boardSize - 1) {
+                // Bottom row: left to right
+                return 2 * boardSize - 2 + col;
+            } else if (col === boardSize - 1) {
+                // Right column: bottom to top
+                return totalCells - row;
+            }
+            
+            return 0; // This should not happen for perimeter cells
+        }
+        
+        // Get the cell element by index
+        function getCellElementByIndex(index) {
+            return document.querySelector(`.cell[data-index="${index}"]`);
+        }
+        
+        // Render players
+        function renderPlayers() {
+            // Clear all player tokens from board
+            document.querySelectorAll('.cell .players-container').forEach(container => {
+                container.innerHTML = '';
+            });
+            
+            // Render player info
+            playersContainer.innerHTML = '';
+            scoreboardBody.innerHTML = '';
+            
+            // Add players to player list and scoreboard
+            players.forEach((player, index) => {
+                // Player info container
+                const playerInfo = document.createElement('div');
+                playerInfo.className = 'player-info';
+                
+                const colorDiv = document.createElement('div');
+                colorDiv.className = 'player-color';
+                colorDiv.style.backgroundColor = player.color;
+                
+                const nameDiv = document.createElement('div');
+                nameDiv.textContent = player.name;
+                
+                const scoreDiv = document.createElement('div');
+                scoreDiv.textContent = `Skor: ${player.score}`;
+                
+                playerInfo.appendChild(colorDiv);
+                playerInfo.appendChild(nameDiv);
+                playerInfo.appendChild(scoreDiv);
+                playersContainer.appendChild(playerInfo);
+                
+                // Scoreboard
+                const scoreRow = document.createElement('tr');
+                const nameCell = document.createElement('td');
+                nameCell.textContent = player.name;
+                const scoreCell = document.createElement('td');
+                scoreCell.textContent = player.score;
+                scoreRow.appendChild(nameCell);
+                scoreRow.appendChild(scoreCell);
+                scoreboardBody.appendChild(scoreRow);
+                
+                // Add player tokens to their respective cells
+                const cell = getCellElementByIndex(player.position);
+                if (cell) {
+                    const playersContainer = cell.querySelector('.players-container');
+                    const token = document.createElement('div');
+                    token.className = 'player-token';
+                    token.style.backgroundColor = player.color;
+                    playersContainer.appendChild(token);
+                }
+            });
+            
+            // Update current player display
+            if (players.length > 0 && gameStarted) {
+                currentPlayerNameElement.textContent = players[currentPlayerIndex].name;
+            } else {
+                currentPlayerNameElement.textContent = '-';
+            }
+        }
+        
+        // Roll dice
+        function rollDice() {
+            if (!gameStarted || players.length === 0) {
+                alert('Silakan tambahkan pemain dan mulai permainan terlebih dahulu!');
+                return;
+            }
+            
+            rollDiceButton.disabled = true;
+            
+            // Animate dice
+            let rollCount = 0;
+            const maxRolls = 10;
+            const rollInterval = setInterval(() => {
+                const diceValue = Math.floor(Math.random() * 6) + 1;
+                diceElement.textContent = getDiceEmoji(diceValue);
+                rollCount++;
+                
+                if (rollCount >= maxRolls) {
+                    clearInterval(rollInterval);
+                    const finalValue = Math.floor(Math.random() * 6) + 1;
+                    diceElement.textContent = getDiceEmoji(finalValue);
+                    movePlayer(finalValue);
+                }
+            }, 100);
+        }
+        
+        // Get dice emoji
+        function getDiceEmoji(value) {
+            const diceEmojis = ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
+            return diceEmojis[value - 1];
+        }
+        
+        // Move current player
+        function movePlayer(steps) {
+            const totalCells = boardSize * 4 - 4;
+            const player = players[currentPlayerIndex];
+            
+            // Update player position
+            player.position = (player.position + steps) % totalCells;
+            
+            // Render updated player positions
+            renderPlayers();
+            
+            // Check cell type
+            const cell = getCellElementByIndex(player.position);
+            if (cell.classList.contains('challenge')) {
+                showChallengeModal();
+            } else if (cell.classList.contains('penalty')) {
+                showPenaltyModal();
+            } else {
+                // Enable roll for next player after a short delay
+                setTimeout(() => {
+                    nextPlayer();
+                }, 1000);
+            }
+        }
+        
+        // Show challenge modal
+        function showChallengeModal() {
+            const question = getRandomItem(challengeQuestions);
+            document.getElementById('challenge-content').innerHTML = `<p>${question}</p>`;
+            challengeModal.style.display = 'block';
+        }
+        
+        // Show penalty modal
+        function showPenaltyModal() {
+            const penalty = getRandomItem(penaltyTasks);
+            document.getElementById('penalty-content').innerHTML = `<p>${penalty}</p>`;
+            penaltyModal.style.display = 'block';
+        }
+        
+        // Get random item from array
+        function getRandomItem(array) {
+            return array[Math.floor(Math.random() * array.length)];
+        }
+        
+        // Switch to next player
+        function nextPlayer() {
+            currentPlayerIndex = (currentPlayerIndex + 1) % players.length;
+            renderPlayers();
+            rollDiceButton.disabled = false;
+        }
+        
+        // Add event listeners
+        function addEventListeners() {
+            // Dice roll
+            rollDiceButton.addEventListener('click', rollDice);
+            
+            // Add player
+            addPlayerButton.addEventListener('click', () => {
+                if (players.length >= maxPlayers) {
+                    alert(`Maksimal ${maxPlayers} pemain!`);
+                    return;
+                }
+                
+                addPlayerModal.style.display = 'block';
+            });
+            
+            // Confirm add player
+            document.getElementById('confirm-add-player').addEventListener('click', () => {
+                const playerNameInput = document.getElementById('player-name');
+                const playerName = playerNameInput.value.trim();
+                
+                if (playerName) {
+                    const playerColor = playerColors[players.length % playerColors.length];
+                    players.push({
+                        name: playerName,
+                        color: playerColor,
+                        position: boardSize * 4 - 5, // Start position (bottom right corner)
+                        score: 0
+                    });
+                    
+                    playerNameInput.value = '';
+                    addPlayerModal.style.display = 'none';
+                    renderPlayers();
+                } else {
+                    alert('Masukkan nama pemain!');
+                }
+            });
+            
+            // Start game
+            startGameButton.addEventListener('click', () => {
+                if (players.length < 1) {
+                    alert('Tambahkan minimal 1 pemain terlebih dahulu!');
+                    return;
+                }
+                
+                gameStarted = true;
+                addPlayerButton.disabled = true;
+                startGameButton.disabled = true;
+                rollDiceButton.disabled = false;
+                renderPlayers();
+            });
+            
+            // Reset game
+            resetGameButton.addEventListener('click', () => {
+                players = [];
+                currentPlayerIndex = 0;
+                gameStarted = false;
+                addPlayerButton.disabled = false;
+                startGameButton.disabled = false;
+                rollDiceButton.disabled = true;
+                renderPlayers();
+            });
+            
+            // Challenge modal buttons
+            document.getElementById('correct-answer').addEventListener('click', () => {
+                players[currentPlayerIndex].score += 10;
+                challengeModal.style.display = 'none';
+                renderPlayers();
+                setTimeout(() => {
+                    nextPlayer();
+                }, 500);
+            });
+            
+            document.getElementById('incorrect-answer').addEventListener('click', () => {
+                challengeModal.style.display = 'none';
+                setTimeout(() => {
+                    nextPlayer();
+                }, 500);
+            });
+            
+            // Penalty modal buttons
+            document.getElementById('penalty-completed').addEventListener('click', () => {
+                players[currentPlayerIndex].score += 5;
+                penaltyModal.style.display = 'none';
+                renderPlayers();
+                setTimeout(() => {
+                    nextPlayer();
+                }, 500);
+            });
+            
+            document.getElementById('penalty-failed').addEventListener('click', () => {
+                penaltyModal.style.display = 'none';
+                setTimeout(() => {
+                    nextPlayer();
+                }, 500);
+            });
+            
+            // Modal close buttons
+            document.getElementById('close-challenge').addEventListener('click', () => {
+                challengeModal.style.display = 'none';
+                setTimeout(() => {
+                    nextPlayer();
+                }, 500);
+            });
+            
+            document.getElementById('close-penalty').addEventListener('click', () => {
+                penaltyModal.style.display = 'none';
+                setTimeout(() => {
+                    nextPlayer();
+                }, 500);
+            });
+            
+            document.getElementById('close-add-player').addEventListener('click', () => {
+                addPlayerModal.style.display = 'none';
+            });
+        }
+        
+        // Initialize the game
+        function init() {
+            createBoard();
+            renderPlayers();
+            addEventListeners();
+            rollDiceButton.disabled = true;
+        }
+        
+        // Start the game
+        window.onload = init;
+    </script>
+</body>
+</html>
